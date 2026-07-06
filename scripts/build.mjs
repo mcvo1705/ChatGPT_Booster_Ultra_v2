@@ -1,0 +1,107 @@
+import * as esbuild from "esbuild";
+import { cpSync, mkdirSync, existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(__dirname, "..");
+
+// Read site configs — single source of truth for all supported AI chat sites
+const sitesConfig = JSON.parse(readFileSync(resolve(ROOT, "sites.config.json"), "utf8"));
+const allUrlPatterns = sitesConfig.flatMap((s) => s.urlPatterns);
+
+const BROWSERS = ["chrome", "firefox", "edge", "safari"];
+const args = process.argv.slice(2);
+const buildAll = args.includes("--all");
+const watch = args.includes("--watch");
+const targetBrowser = process.env.TARGET_BROWSER || "chrome";
+
+const targets = buildAll
+    ? BROWSERS
+    : BROWSERS.includes(targetBrowser)
+        ? [targetBrowser]
+        : (console.error(`unknown browser: ${targetBrowser}`), process.exit(1));
+
+function esbuildOptions(browser, entryName, entryPath) {
+    const outdir = resolve(ROOT, "dist", browser);
+    return {
+        entryPoints: [resolve(ROOT, entryPath)],
+        outfile: resolve(outdir, `${entryName}.js`),
+        bundle: true,
+        minify: !watch,
+        sourcemap: watch ? "inline" : false,
+        target: ["es2022"],
+        format: "esm",
+        platform: "browser",
+        define: { "__DEV__": watch ? "true" : "false" },
+        logLevel: "info",
+    };
+}
+
+function copyAssets(browser) {
+    const outdir = resolve(ROOT, "dist", browser);
+    const browserDir = resolve(ROOT, "browsers", browser);
+
+    mkdirSync(outdir, { recursive: true });
+
+    // Read manifest template and inject URL patterns from sites.config.json
+    const manifest = JSON.parse(readFileSync(resolve(browserDir, "manifest.json"), "utf8"));
+    manifest.host_permissions = allUrlPatterns;
+    // Inject URL patterns into ALL content_scripts entries
+    if (Array.isArray(manifest.content_scripts)) {
+        for (const cs of manifest.content_scripts) {
+            cs.matches = allUrlPatterns;
+        }
+    }
+    writeFileSync(resolve(outdir, "manifest.json"), JSON.stringify(manifest, null, 4) + "\n");
+
+    cpSync(resolve(ROOT, "src", "popup", "popup.html"), resolve(outdir, "popup.html"));
+    cpSync(resolve(ROOT, "src", "popup", "popup.css"), resolve(outdir, "popup.css"));
+
+    // copy extension icons
+    const iconSrc = resolve(ROOT, "icons");
+    const iconDst = resolve(outdir, "icons");
+    mkdirSync(iconDst, { recursive: true });
+
+    if (existsSync(iconSrc)) {
+        for (const file of readdirSync(iconSrc)) {
+            cpSync(resolve(iconSrc, file), resolve(iconDst, file));
+        }
+    }
+}
+
+async function buildBrowser(browser) {
+    console.log(`building ${browser}...`);
+    copyAssets(browser);
+
+    const entries = [
+        { name: "settingsBridge", path: "src/content/settingsBridge.ts" },
+        { name: "fetchInterceptor", path: "src/content/fetchInterceptor.ts" },
+        { name: "content", path: "src/content/index.ts" },
+        { name: "background", path: "src/background/index.ts" },
+        { name: "popup", path: "src/popup/popup.ts" },
+    ];
+
+    for (const entry of entries) {
+        const opts = esbuildOptions(browser, entry.name, entry.path);
+        if (watch) {
+            const ctx = await esbuild.context(opts);
+            await ctx.watch();
+            console.log(`  watching ${entry.name}`);
+        } else {
+            await esbuild.build(opts);
+        }
+    }
+
+    console.log(`${browser} done -> dist/${browser}/`);
+}
+
+(async () => {
+    try {
+        for (const browser of targets) await buildBrowser(browser);
+        if (watch) console.log("\nwatching for changes...");
+    } catch (err) {
+        console.error("build failed:", err);
+        process.exit(1);
+    }
+})();

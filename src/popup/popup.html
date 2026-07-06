@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Booster Ultra</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup">
+        <!-- Tooltip -->
+        <div id="tooltip" class="tooltip" role="tooltip"></div>
+
+        <!-- Header -->
+        <header class="popup-header">
+            <div class="popup-header__title-row">
+                <div class="popup-header__brand">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>ChatGPT Booster Ultra</span>
+                    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle theme">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-toggle__icon sun">
+                            <circle cx="12" cy="12" r="4"/>
+                            <path d="M12 2v2"/><path d="M12 20v2"/>
+                            <path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/>
+                            <path d="M2 12h2"/><path d="M20 12h2"/>
+                            <path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+                        </svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-toggle__icon moon hidden">
+                            <path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/>
+                        </svg>
+                    </button>
+                </div>
+                <label class="toggle" aria-label="Enable or disable extension">
+                    <input type="checkbox" id="toggle-enabled" class="toggle__input">
+                    <span class="toggle__slider"></span>
+                </label>
+            </div>
+            <div class="popup-header__status-row">
+                <p class="popup-header__status" id="status-text">Ready</p>
+                <p class="popup-header__status" id="version-text"></p>
+            </div>
+        </header>
+
+        <!-- Settings -->
+        <section class="popup-settings" aria-label="Settings">
+
+            <!-- ⚡ Fast Mode + Auto Load (Row) -->
+            <div class="setting-group">
+                <div class="setting-row">
+                    <div class="setting" data-tooltip="Trims API responses before rendering. Faster than hiding after the fact. Disable if messages appear missing.">
+                        <div class="setting__info">
+                            <span class="setting__label">
+                                <svg class="setting__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                </svg>
+                                Fast mode
+                            </span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-fetch-intercept" class="toggle__input">
+                            <span class="toggle__slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting" data-tooltip="Beta: reveals one older message when you scroll to the top. Disabled by default while we iron out scroll glitches.">
+                        <div class="setting__info">
+                            <span class="setting__label">
+                                <svg class="setting__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 5v14"/><path d="M5 12l7-7 7 7"/>
+                                </svg>
+                                Auto load
+                                <span class="setting__badge">Beta</span>
+                            </span>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-auto-load" class="toggle__input">
+                            <span class="toggle__slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 👁️ Hide Old Turns -->
+            <div class="setting-group">
+                <div class="setting full-width" data-tooltip="Hide older turns from the DOM beyond the Visible limit. Turn this off if scrolling feels janky on ChatGPT (which has its own viewport-based rendering) — Fast mode still trims the API payload for speed.">
+                    <div class="setting__info">
+                        <span class="setting__label">
+                            <svg class="setting__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            Hide old turns
+                        </span>
+                        <span class="setting__hint">Only keep the last N visible</span>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="toggle-hide-old" class="toggle__input">
+                        <span class="toggle__slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 🔢 Visible + Batch (Row) -->
+            <div class="setting-group">
+                <div class="setting-row">
+                    <div class="setting" data-tooltip="Turns shown at once. Lower = faster in long chats. Hidden turns are accessible via Load More.">
+                        <div class="setting__info">
+                            <span class="setting__label" id="visible-limit-label">
+                                <svg class="setting__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                                </svg>
+                                Visible
+                            </span>
+                            <span class="setting__hint">Shown at once</span>
+                        </div>
+                        <input type="number" id="visible-limit" class="setting__input" min="1" max="200" step="1" aria-labelledby="visible-limit-label">
+                    </div>
+                    <div class="setting" data-tooltip="Turns revealed per Load More click. Larger = scroll further back in one click.">
+                        <div class="setting__info">
+                            <span class="setting__label" id="batch-size-label">
+                                <svg class="setting__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                                    <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                                </svg>
+                                Batch
+                            </span>
+                            <span class="setting__hint">Per load more</span>
+                        </div>
+                        <input type="number" id="batch-size" class="setting__input" min="1" max="50" step="1" aria-labelledby="batch-size-label">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📍 Status Indicator -->
+            <div class="setting-group">
+                <div class="setting full-width" data-tooltip="Floating badge on the chat page showing hidden vs. visible turns. Pick which corner.">
+                    <div class="setting__info">
+                        <span class="setting__label">
+                            <svg class="setting__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                <path d="M2 17l10 5 10-5"/>
+                                <path d="M2 12l10 5 10-5"/>
+                            </svg>
+                            Status indicator
+                        </span>
+                        <span class="setting__hint">Floating badge position</span>
+                    </div>
+                    <div class="status-row">
+                        <div class="position-picker" id="position-picker" aria-label="Badge position">
+                            <button class="position-picker__btn" data-pos="top-left" title="Top left"></button>
+                            <button class="position-picker__btn" data-pos="top-right" title="Top right"></button>
+                            <button class="position-picker__btn" data-pos="bottom-left" title="Bottom left"></button>
+                            <button class="position-picker__btn" data-pos="bottom-right" title="Bottom right"></button>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="toggle-status" class="toggle__input">
+                            <span class="toggle__slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 📊 Weekly Requests -->
+            <div class="setting-group" id="request-counter" hidden>
+                <div class="setting full-width" data-tooltip="Counts messages sent this week. Set limit to your plan's cap (e.g. 3,000 for Plus). 0 = count only, no limit.">
+                    <div class="setting__info">
+                        <span class="setting__label">
+                            <svg class="setting__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12a9 9 0 1 1-9-9 8.75 8.75 0 0 1 7.07 3.17"/>
+                                <path d="M12 7v5l3 3"/>
+                                <circle cx="12" cy="12" r="9"/>
+                            </svg>
+                            Weekly requests
+                        </span>
+                        <span class="setting__hint" id="request-counter-hint">Resets every Monday</span>
+                    </div>
+                    <div class="request-counter__right">
+                        <span id="request-count-value" class="request-count-value">0</span>
+                        <span class="request-limit-sep">/</span>
+                        <input type="number" id="request-limit-input" class="setting__input request-limit-input" min="0" max="99999" step="100" title="Weekly limit (0 = just count)">
+                        <button id="request-count-reset" class="icon-btn" title="Reset counter" aria-label="Reset weekly request counter">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                <path d="M3 3v5h5"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>

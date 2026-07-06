@@ -1,0 +1,113 @@
+[
+    {
+        "id": "chatgpt",
+        "name": "ChatGPT",
+        "hostnames": [
+            "chatgpt.com"
+        ],
+        "urlPatterns": [
+            "*://chatgpt.com/*"
+        ],
+        "selectors": {
+            "messageTurn": "section[data-testid^=\"conversation-turn-\"]",
+            "scrollContainer": "div[data-scroll-root]",
+            "scrollContainerAlt": "main",
+            "userMessageSelector": "[data-message-author-role=\"user\"]"
+        },
+        "messageIdAttribute": "data-turn-id",
+        "statusAnchors": {
+            "name": "[data-testid=\"model-switcher-dropdown-button\"] > div",
+            "controls": "[data-testid=\"conversation-options-button\"]",
+            "bottom": "div[data-scroll-root]"
+        },
+        "ui": {
+            "loadMoreMargin": "4px 15px 4px 0px"
+        },
+        "fetchIntercept": {
+            "urlMatch": "/backend-api/conversation/",
+            "urlExclude": [
+                "/backend-api/conversations"
+            ],
+            "method": "GET",
+            "strategy": "tree-walk",
+            "treeWalk": {
+                "nodesKey": "mapping",
+                "currentNodeKey": "current_node",
+                "rootKey": "root",
+                "parentPointer": "parent",
+                "childrenKey": "children",
+                "messageKey": "message",
+                "roleAccessor": "author.role",
+                "visibleRoles": [
+                    "user",
+                    "assistant",
+                    "tool"
+                ]
+            }
+        }
+    },
+    {
+        "id": "claude",
+        "name": "Claude",
+        "hostnames": [
+            "claude.ai"
+        ],
+        "urlPatterns": [
+            "*://claude.ai/*"
+        ],
+        "selectors": {
+            "messageTurn": "[data-test-render-count]",
+            "scrollContainer": "div[data-autoscroll-container]",
+            "scrollContainerAlt": ".overflow-y-scroll"
+        },
+        "statusAnchors": {
+            "name": "[data-testid=\"chat-title-button\"]",
+            "controls": "[data-testid=\"wiggle-controls-actions\"]",
+            "bottom": "div[id=\"main-content\"]"
+        },
+        "ui": {
+            "loadMoreMargin": "4px 0"
+        },
+        "fetchIntercept": {
+            "urlMatch": "/chat_conversations/",
+            "urlExclude": [
+                "/chat_conversations?"
+            ],
+            "method": "GET",
+            "strategy": "array-slice",
+            "arraySlice": {
+                "messagesKey": "chat_messages",
+                "roleKey": "sender",
+                "visibleRoles": [
+                    "human",
+                    "assistant"
+                ],
+                "keepInitial": 1
+            }
+        }
+    },
+    {
+        "id": "gemini",
+        "name": "Gemini",
+        "hostnames": [
+            "gemini.google.com"
+        ],
+        "isDynamic": true,
+        "urlPatterns": [
+            "*://gemini.google.com/*"
+        ],
+        "selectors": {
+            "messageTurn": "user-query, model-response",
+            "scrollContainer": "infinite-scroller[data-test-id=\"chat-history-container\"]",
+            "scrollContainerAlt": "infinite-scroller.chat-history"
+        },
+        "statusAnchors": {
+            "name": "bard-logo",
+            "controls": "div.boqOnegoogleliteOgbOneGoogleBar",
+            "bottom": "div.content-container"
+        },
+        "ui": {
+            "loadMoreMargin": "4px 0"
+        }
+    }
+]
